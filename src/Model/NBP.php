@@ -36,13 +36,14 @@ class KBariotis_NBP_Model_NBP extends Mage_Core_Model_Abstract
 
         $request = $this->createXMLRequestPreTransaction($orderId, $orderTotal, $successUrl);
 
-        if($response = $this->makeRequest($request))
+        if ($response = $this->makeRequest($request))
             return $response->HpsTxn->hps_url . '?HPS_SessionID=' . $response->HpsTxn->session_id;
 
         return false;
     }
 
-    private function createXMLRequestPreTransaction($orderId, $orderTotal, $successUrl) {
+    private function createXMLRequestPreTransaction($orderId, $orderTotal, $successUrl)
+    {
         $request = new SimpleXMLElement("<Request></Request>");
         $request->addAttribute("version", "2");
 
@@ -57,14 +58,20 @@ class KBariotis_NBP_Model_NBP extends Mage_Core_Model_Abstract
         $txnDetails
             ->addChild("amount", $orderTotal)
             ->addAttribute("currency", "EUR");
+        $txnDetails
+            ->addChild("capturemethod", "ecomm");
 
         $hpsTxn = $transaction->addChild("HpsTxn");
         $hpsTxn
-            ->addChild("method", "setup");
+            ->addChild("method", "setup_full");
         $hpsTxn
             ->addChild("page_set_id", $this->pageSetId);
         $hpsTxn
             ->addChild("return_url", $successUrl);
+
+        $cardTxn = $transaction->addChild('CardTxn');
+        $cardTxn
+            ->addChild("method", "auth");
 
         return $request;
     }
@@ -74,14 +81,15 @@ class KBariotis_NBP_Model_NBP extends Mage_Core_Model_Abstract
 
         $request = $this->createXMLRequestPostTransaction($ref);
 
-        if($response = $this->makeRequest($request))
+        if ($response = $this->makeRequest($request))
             return $response->merchantreference;
 
         return false;
 
     }
 
-    private function createXMLRequestPostTransaction($ref) {
+    private function createXMLRequestPostTransaction($ref)
+    {
 
         $request = new SimpleXMLElement("<Request></Request>");
         $request->addAttribute("version", "2");
@@ -106,29 +114,24 @@ class KBariotis_NBP_Model_NBP extends Mage_Core_Model_Abstract
         $client->setMethod(Varien_Http_Client::POST);
         $client->setRawData($request->asXML());
 
-        try {
-            $response = $client->request();
-            if (!$response->isSuccessful())
-                throw new Mage_Payment_Exception('Could not communicate to payment server');
+        $response = $client->request();
+        if (!$response->isSuccessful())
+            throw new Mage_Payment_Exception('Could not communicate to payment server');
 
-            $responseBody = $response->getBody();
+        $responseBody = $response->getBody();
 
-            $response = simplexml_load_string($responseBody);
+        $response = simplexml_load_string($responseBody);
 
-            $status = intval($response->status);
+        $status = intval($response->status);
 
-            if ($status != 1 && $status != 7)
-                throw new Mage_Payment_Exception('Error from the Bank');
+        if ($status != 1 && $status != 7)
+            Mage::log('Error from the Bank : ' . $responseBody);
 
-            if ($status == 7)
-                throw new Mage_Payment_Exception('Bank refused the payment');
+        if ($status == 7)
+            Mage::log('Bank refused the payment : ' . $responseBody);
 
-            if ($status == 1)
-                return $response;
-
-        } catch (Exception $e) {
-            throw new Mage_Payment_Exception('Something went wrong : ' . $e->getMessage());
-        }
+        if ($status == 1)
+            return $response;
 
         return false;
     }

@@ -5,7 +5,6 @@
  *
  * @author: Kostas Bariotis
  */
-
 class KBariotis_NBP_PaymentController extends Mage_Core_Controller_Front_Action
 {
 
@@ -15,7 +14,11 @@ class KBariotis_NBP_PaymentController extends Mage_Core_Controller_Front_Action
         $model = new KBariotis_NBP_Model_NBP();
 
         $redirectUrl = $model->getRedirectUrl();
-        $this->_redirectUrl($redirectUrl);
+
+        if ($redirectUrl)
+            $this->_redirectUrl($redirectUrl);
+        else
+            $this->_redirectUrl(Mage::getUrl('checkout/onepage/failure'));
     }
 
     public function successAction()
@@ -33,24 +36,7 @@ class KBariotis_NBP_PaymentController extends Mage_Core_Controller_Front_Action
                 $model    = new KBariotis_NBP_Model_NBP();
 
                 if ($orderId = $model->queryRefTransaction($_request)) {
-
-                    $order = Mage::getModel('sales/order')
-                                 ->loadByIncrementId($orderId);
-
-                    /* Update Order */
-                    $order->setState(
-                          $model->getNewOrderStatus(),
-                          true,
-                          'National Bank of Greece has authorized the payment.'
-                    );
-
-                    $order->sendNewOrderEmail();
-                    $order->setEmailSent(true);
-
-                    $order->save();
-
-                    Mage::getSingleton('checkout/session')
-                        ->unsQuoteId();
+                    echo "KOSTARELO";
 
                     Mage_Core_Controller_Varien_Action::_redirect(
                                                       'checkout/onepage/success', array('_secure' => true)
@@ -61,7 +47,7 @@ class KBariotis_NBP_PaymentController extends Mage_Core_Controller_Front_Action
                     Mage_Core_Controller_Varien_Action::_redirect('checkout/onepage/failure');
                 }
             }
-        } catch (Exception $e) {
+        } catch (Mage_Payment_Exception $e) {
             Mage::log("Something went wrong / " . $e->getMessage());
         }
     }
