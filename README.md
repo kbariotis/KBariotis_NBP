@@ -4,7 +4,11 @@ As easy as putting your Merchant Id and Password and start accepting Credit Card
 
 Integration
 -------------------
-Currently, it supports only `HPS - Hosted Payment Pages with One Stage Processing`.
+Currently, it supports
+
+- HPS - Hosted Payment Pages
+- One Stage Processing
+- 3-D Secure
 
 Setup
 --------------------

@@ -13,6 +13,7 @@ class KBariotis_NBP_Model_NBP extends Mage_Core_Model_Abstract
     private $merchantSecret = null;
     private $newOrderStatus = null;
     private $pageSetId = null;
+    private $enable3dSecure = null;
 
 
     protected function _construct()
@@ -22,6 +23,7 @@ class KBariotis_NBP_Model_NBP extends Mage_Core_Model_Abstract
         $this->merchantSecret   = Mage::getStoreConfig('payment/nbp/merchant_confirmation_pwd');
         $this->pageSetId        = Mage::getStoreConfig('payment/nbp/page_set_id');
         $this->newOrderStatus   = Mage::getStoreConfig('payment/nbp/order_status');
+        $this->enable3dSecure   = Mage::getStoreConfig('payment/nbp/enable_3d_secure');
     }
 
     public function getRedirectUrl()
@@ -55,6 +57,21 @@ class KBariotis_NBP_Model_NBP extends Mage_Core_Model_Abstract
         $txnDetails  = $transaction->addChild("TxnDetails");
         $txnDetails
             ->addChild("merchantreference", $orderId);
+
+        if ($this->enable3dSecure) {
+            $threeDSecure = $txnDetails->addChild("ThreeDSecure");
+            $browser      = $threeDSecure->addChild("Browser");
+
+            $browser->addChild("device_category", 0);
+            $browser->addChild("accept_headers", "*/*");
+            $browser->addChild("user_agent", "IE/6.0");
+
+            $threeDSecure->addChild("purchase_datetime", "20131105 09:27:00");
+            $threeDSecure->addChild("merchant_url", "http://127.0.0.1/mtest/");
+            $threeDSecure->addChild("purchase_desc", $orderId);
+            $threeDSecure->addChild("verify", "yes");
+        }
+
         $txnDetails
             ->addChild("amount", $orderTotal)
             ->addAttribute("currency", "EUR");
@@ -68,6 +85,8 @@ class KBariotis_NBP_Model_NBP extends Mage_Core_Model_Abstract
             ->addChild("page_set_id", $this->pageSetId);
         $hpsTxn
             ->addChild("return_url", $successUrl);
+        $hpsTxn
+            ->addChild("expiry_url", Mage::getUrl(''));
 
         $cardTxn = $transaction->addChild('CardTxn');
         $cardTxn
