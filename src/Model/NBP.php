@@ -66,10 +66,10 @@ class KBariotis_NBP_Model_NBP extends Mage_Core_Model_Abstract
             $browser->addChild("accept_headers", "*/*");
             $browser->addChild("user_agent", "IE/6.0");
 
-            $threeDSecure->addChild("purchase_datetime", "20131105 09:27:00");
-            $threeDSecure->addChild("merchant_url", "http://127.0.0.1/mtest/");
+            $threeDSecure->addChild("purchase_datetime", date('Ymd H:i:s'));
             $threeDSecure->addChild("purchase_desc", $orderId);
             $threeDSecure->addChild("verify", "yes");
+            
         }
 
         $txnDetails
